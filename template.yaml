@@ -140,8 +140,8 @@ Resources:
                 Action: dynamodb:*
                 Resource:
                   -
-                    arn:aws:dynamodb:us-east-1:842282320396:table/User
-                    arn:aws:dynamodb:us-east-1:842282320396:table/User/index/*
+                    arn:aws:dynamodb:us-west-2:408311160917:table/User
+                    arn:aws:dynamodb:us-west-2:408311160917:table/User/index/*
 
 Outputs:
 
