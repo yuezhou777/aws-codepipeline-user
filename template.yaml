@@ -1,0 +1,172 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: java8
+    MemorySize: 256
+
+Resources:
+
+  RestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+
+  CreateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/HelloWorld-1.0.jar
+      #CodeUri: ./
+      Handler: helloworld.UserHandler::create
+      Policies:
+        DynamoDBCrudPolicy:
+          TableName:
+            Ref: UserTable
+      Events:
+        List:
+          Type: Api
+          Properties:
+            Path: /User
+            Method: POST
+            RestApiId:
+              Ref: RestApi
+
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/HelloWorld-1.0.jar
+      Handler: helloworld.UserHandler::read
+      Policies:
+        DynamoDBReadPolicy:
+          TableName:
+            Ref: UserTable
+      Events:
+        List:
+          Type: Api
+          Properties:
+            Path: /User/{id}
+            Method: GET
+            RestApiId:
+              Ref: RestApi
+
+  ListAllUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/HelloWorld-1.0.jar
+      Handler: helloworld.UserHandler::getAll
+      Policies:
+        DynamoDBReadPolicy:
+          TableName:
+            Ref: UserTable
+      Events:
+        List:
+          Type: Api
+          Properties:
+            Path: /User
+            Method: GET
+            RestApiId:
+              Ref: RestApi
+
+  UpdateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/HelloWorld-1.0.jar
+      Handler: helloworld.UserHandler::update
+      Policies:
+        DynamoDBReadPolicy:
+          TableName:
+            Ref: UserTable
+      Events:
+        List:
+          Type: Api
+          Properties:
+            Path: /User/{id}
+            Method: PUT
+            RestApiId:
+              Ref: RestApi
+
+  DeleteUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/HelloWorld-1.0.jar
+      #CodeUri: ./
+      Handler: helloworld.UserHandler::delete
+      Role: !GetAtt UserCRUDRole.Arn
+      Policies:
+        DynamoDBReadPolicy:
+          TableName:
+            Ref: UserTable
+      Events:
+        List:
+          Type: Api
+          Properties:
+            Path: /User/{id}
+            Method: DELETE
+            RestApiId:
+              Ref: RestApi
+
+  UserTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName:
+        Fn::Sub: User
+      PrimaryKey:
+        Name: id
+        Type: String
+
+  #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
+  UserCRUDRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: VisualEditor0
+                Effect: Allow
+                Action: dynamodb:*
+                Resource:
+                  -
+                    arn:aws:dynamodb:us-east-1:842282320396:table/User
+                    arn:aws:dynamodb:us-east-1:842282320396:table/User/index/*
+
+Outputs:
+
+  RestApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://RestApi.execute-api.${AWS::Region}.amazonaws.com/Prod/user/"
+  CreateUserFunction:
+    Description: "CreateUserFunctionARN"
+    Value: !GetAtt CreateUserFunction.Arn
+  CreateUserFunctionIamRole:
+    Description: "Implicit IAM Role created for CreateUserFunction"
+    Value: !GetAtt CreateUserFunctionRole.Arn
+  GetUserFunction:
+    Description: "CreateUserFunctionARN"
+    #!GetAtt returns the value of an attribute from a resource in the template
+    Value: !GetAtt GetUserFunction.Arn
+  GetUserFunctionIamRole:
+    Description: "Implicit IAM Role created for CreateUserFunction"
+    Value: !GetAtt GetUserFunctionRole.Arn
+  UpdateUserFunction:
+    Description: "UpdateUserFunctionARN"
+    Value: !GetAtt UpdateUserFunction.Arn
+  UpdateUserFunctionIamRole:
+    Description: "Implicit IAM Role created for UpdateUserFunction"
+    Value: !GetAtt UpdateUserFunctionRole.Arn
+  DeleteUserFunction:
+    Description: "DeleteUserFunctionARN"
+    Value: !GetAtt DeleteUserFunction.Arn
